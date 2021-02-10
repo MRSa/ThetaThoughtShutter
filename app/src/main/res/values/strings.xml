@@ -1,4 +1,10 @@
 <resources>
     <string name="app_name">ThetaThoughtShutter</string>
+    <string name="app_name2">TTShut</string>
     <string name="blank"> </string>
+    <string name="bluetooth_setting_is_off">Bluetooth Setting is OFF</string>
+    <string name="not_support_bluetooth">Does not support a Bluetooth.</string>
+    <string name="bluetooth_scan_start_failure">Bluetooth scan start failure.</string>
+    <string name="scan_fail_via_bluetooth">Bluetooth scan failure.</string>
+    <string name="bluetooth_scan_finished">Bluetooth scan finished.</string>
 </resources>

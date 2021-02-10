@@ -9,10 +9,10 @@ android {
 
     defaultConfig {
         applicationId "jp.osdn.gokigen.thetathoughtshutter"
-        minSdkVersion 24
+        minSdkVersion 25
         targetSdkVersion 30
-        versionCode 10000
-        versionName "1.0.00"
+        versionCode 10000000
+        versionName "10.00.0001"
     }
 
     buildTypes {
