@@ -50,13 +50,13 @@ object SimpleLogDumper
         System.gc()
     }
 
-    fun binaryOutputToFile(activity: Activity, fileNamePrefix: String, rx_body: ByteArray)
+    fun binaryOutputToFile(fileNamePrefix: String, rx_body: ByteArray)
     {
         try
         {
             val calendar = Calendar.getInstance()
             val extendName = SimpleDateFormat("yyyyMMdd-HHmmss", Locale.getDefault()).format(calendar.time)
-            @Suppress("DEPRECATION") val directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DCIM).path + "/" + activity.getString(R.string.app_name2) + "/"
+            @Suppress("DEPRECATION") val directoryPath = Environment.getExternalStoragePublicDirectory(Environment.DIRECTORY_DOWNLOADS).path + "/"
             val outputFileName = fileNamePrefix + "_" + extendName + ".bin"
             val filepath = File(directoryPath.toLowerCase(Locale.ROOT), outputFileName.toLowerCase(Locale.ROOT)).path
             val outputStream = FileOutputStream(filepath)

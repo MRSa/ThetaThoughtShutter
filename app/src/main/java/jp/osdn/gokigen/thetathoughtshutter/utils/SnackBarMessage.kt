@@ -8,7 +8,11 @@ import jp.osdn.gokigen.thetathoughtshutter.R
 
 class SnackBarMessage(private val context: Activity, private val isToast: Boolean)
 {
-    private val TAG = toString()
+    companion object
+    {
+        private val TAG = toString()
+    }
+
     fun showMessage(message: String?)
     {
         try
