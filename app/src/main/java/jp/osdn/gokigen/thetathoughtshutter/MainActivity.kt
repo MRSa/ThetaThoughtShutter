@@ -13,6 +13,7 @@ import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
 class MainActivity : PluginActivity()
 {
     private val thetaHardwareControl = ThetaHardwareControl(this)
+    private var applicationStatus : MyApplicationStatus = MyApplicationStatus.Undefined
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
