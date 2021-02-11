@@ -8,9 +8,12 @@ import com.theta360.pluginlibrary.receiver.KeyReceiver
 import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
 import jp.osdn.gokigen.thetathoughtshutter.R.layout
+import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
 
 class MainActivity : PluginActivity()
 {
+    private val thetaHardwareControl = ThetaHardwareControl(this)
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -99,4 +102,5 @@ class MainActivity : PluginActivity()
 //    - 119 : Fn Button (Z1 Only)
 //
 //
+//   http://localhost:8080/
 //
