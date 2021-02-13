@@ -1,11 +1,16 @@
 package jp.osdn.gokigen.thetathoughtshutter
 
-enum class MyApplicationStatus
+data class MyApplicationStatus(val defaultStatus : Status = Status.Undefined)
 {
-    Undefined,
-    FailedInitialize,
-    Initialized,
-    Searching,
-    Connected,
-    Scanning,
+    var status: Status = Status.Undefined
+
+    enum class Status
+    {
+        Undefined,
+        FailedInitialize,
+        Initialized,
+        Searching,
+        Connected,
+        Scanning,
+    }
 }
