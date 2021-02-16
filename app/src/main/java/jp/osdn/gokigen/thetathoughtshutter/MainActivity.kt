@@ -1,6 +1,7 @@
 package jp.osdn.gokigen.thetathoughtshutter
 
 import android.os.Bundle
+import android.util.Log
 import android.view.KeyEvent
 import com.theta360.pluginlibrary.activity.PluginActivity
 import com.theta360.pluginlibrary.callback.KeyCallback
@@ -16,6 +17,11 @@ class MainActivity : PluginActivity()
     private val thetaHardwareControl = ThetaHardwareControl(this)
     private val applicationStatus : MyApplicationStatus = MyApplicationStatus()
 
+    companion object
+    {
+        private val TAG = MainActivity::class.java.simpleName
+    }
+
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
@@ -26,39 +32,27 @@ class MainActivity : PluginActivity()
         setKeyCallback(object : KeyCallback {
             override fun onKeyDown(keyCode: Int, event: KeyEvent?)
             {
-/*
-                if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
-                {
 
-                }
-                if (keyCode == KeyReceiver.KEYCODE_CAMERA)   // Shutterボタン
-                {
-
-                }
-                if (keyCode == KeyReceiver.KEYCODE_FUNCTION)   // Fnボタン (Z1のみ)
-                {
-
-                }
-                if (keyCode == KeyReceiver.KEYCODE_WLAN_ON_OFF) // Wirelessボタン
-                {
-
-                }
-*/
             }
 
             override fun onKeyUp(keyCode: Int, event: KeyEvent?)
             {
                 if (keyCode == KeyReceiver.KEYCODE_CAMERA)   // Shutterボタン
                 {
-                    if (applicationStatus.status == MyApplicationStatus.Status.Connected)
+                    when (applicationStatus.status)
                     {
-                        // EEGからの情報を取得して撮影する
-                        applicationStatus.status = MyApplicationStatus.Status.Scanning
-                    }
-                    else if (applicationStatus.status == MyApplicationStatus.Status.Scanning)
-                    {
-                        // スタンバイ状態に戻す
-                        applicationStatus.status = MyApplicationStatus.Status.Connected
+                        MyApplicationStatus.Status.Connected -> {
+                            // EEGからの情報を取得して撮影する
+                            applicationStatus.status = MyApplicationStatus.Status.Scanning
+                        }
+                        MyApplicationStatus.Status.Scanning -> {
+                            // スタンバイ状態に戻す
+                            applicationStatus.status = MyApplicationStatus.Status.Connected
+                        }
+                        else -> {
+                            // ダミー処理 (仮にEEG接続失敗のステータスにする)
+                            applicationStatus.status = MyApplicationStatus.Status.FailedInitialize
+                        }
                     }
                 }
                 if (keyCode == KeyReceiver.KEYCODE_WLAN_ON_OFF) // Wirelessボタン
@@ -69,21 +63,6 @@ class MainActivity : PluginActivity()
                         applicationStatus.status = MyApplicationStatus.Status.Searching
                     }
                 }
-/*
-                if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
-                {
-
-                }
-                if (keyCode == KeyReceiver.KEYCODE_FUNCTION)   // Fnボタン (Z1のみ)
-                {
-
-                }
-*/
-                updateStatus(applicationStatus.status)
-            }
-
-            override fun onKeyLongPress(keyCode: Int, event: KeyEvent?)
-            {
                 if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
                 {
                     if (applicationStatus.status == MyApplicationStatus.Status.Searching)
@@ -98,22 +77,20 @@ class MainActivity : PluginActivity()
                     }
                 }
 /*
-                if (keyCode == KeyReceiver.KEYCODE_CAMERA)   // Shutterボタン
-                {
-
-                }
                 if (keyCode == KeyReceiver.KEYCODE_FUNCTION)   // Fnボタン (Z1のみ)
-                {
-
-                }
-                if (keyCode == KeyReceiver.KEYCODE_WLAN_ON_OFF) // Wirelessボタン
                 {
 
                 }
 */
                 updateStatus(applicationStatus.status)
             }
+
+            override fun onKeyLongPress(keyCode: Int, event: KeyEvent?)
+            {
+
+            }
         })
+        updateStatus(applicationStatus.status)
     }
 
     private fun updateStatus(currentStatus : MyApplicationStatus.Status)
@@ -122,28 +99,39 @@ class MainActivity : PluginActivity()
         {
             when (currentStatus) {
                 MyApplicationStatus.Status.Initialized -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 1500, LedColor.BLUE)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.BLUE)
+                    Log.v(TAG, " INITIALIZED")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 1500, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)     // Liveランプ (OFF)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)      // 赤ランプ
                 }
                 MyApplicationStatus.Status.Searching -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.BLUE)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.BLUE)
+                    Log.v(TAG, " SEARCHING")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)     // 赤ランプ
                 }
                 MyApplicationStatus.Status.Connected -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 1, LedColor.BLUE)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.BLUE)
+                    Log.v(TAG, " CONNECTED")
+                    thetaHardwareControl.controlLED(LedTarget.LED3,  0, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)    // 赤ランプ
                 }
                 MyApplicationStatus.Status.Scanning -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 1, LedColor.BLUE)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 1, LedColor.BLUE)
+                    Log.v(TAG, " SCANNING")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)    // 赤ランプ
                 }
                 MyApplicationStatus.Status.FailedInitialize -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.RED)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.BLUE)
+                    Log.v(TAG, " FAILED INITIALIZE")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, 250, LedColor.RED)    // 赤ランプ
                 }
                 else -> {
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.BLUE)
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.BLUE)
+                    Log.v(TAG, " UNDEFINED")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, -1, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED4, -1, LedColor.BLUE)   // カメラランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED5, -1, LedColor.BLUE)   // ムービーランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6,  0, LedColor.BLUE)   // Liveランプ (ON)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)    // 赤ランプ
                 }
             }
         }

@@ -17,7 +17,16 @@ class ThetaHardwareControl(private val activity: PluginActivity) : IThetaHardwar
                 try
                 {
                     when (period) {
-                        0 -> activity.notificationLedShow(device)
+                        0 -> {
+                            if (device == LedTarget.LED3)
+                            {
+                                activity.notificationLed3Show(color)
+                            }
+                            else
+                            {
+                                activity.notificationLedShow(device)
+                            }
+                        }
                         -1 -> activity.notificationLedHide(device)
                         else -> activity.notificationLedBlink(device, color, period)
                     }
