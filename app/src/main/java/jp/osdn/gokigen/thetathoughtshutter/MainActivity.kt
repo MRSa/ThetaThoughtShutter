@@ -10,6 +10,8 @@ import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
 import jp.osdn.gokigen.thetathoughtshutter.R.layout
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
+import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaSetupBluetoothSPP
+import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
 import java.lang.Exception
 
 class MainActivity : PluginActivity()
@@ -90,6 +92,7 @@ class MainActivity : PluginActivity()
 
             }
         })
+
         updateStatus(applicationStatus.status)
     }
 
@@ -148,6 +151,7 @@ class MainActivity : PluginActivity()
         {
 
         }
+        initializeBluetooth()
     }
 
     override fun onPause()
@@ -155,6 +159,39 @@ class MainActivity : PluginActivity()
         super.onPause()
     }
 
+    private fun initializeBluetooth()
+    {
+        try
+        {
+            val thread = Thread {
+                try
+                {
+                    val setupBluetooth = ThetaSetupBluetoothSPP("http://localhost:8080")
+                    setupBluetooth.setupBluetoothSPP(object : IOperationCallback { override fun operationExecuted(result: Int, resultStr: String?)
+                    {
+                        Log.v(TAG, " optionSet.getOptions(Bluetooth) : $resultStr? ")
+
+
+                        if (result == 0)
+                        {
+                            // Bluetoothの初期化終了
+                            applicationStatus.status = MyApplicationStatus.Status.Initialized
+                            updateStatus(applicationStatus.status)
+                        }
+                    }})
+                }
+                catch (e: Exception)
+                {
+                    e.printStackTrace()
+                }
+            }
+            thread.start()
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+    }
 }
 
 //

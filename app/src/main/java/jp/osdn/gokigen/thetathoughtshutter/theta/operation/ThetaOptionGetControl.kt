@@ -20,7 +20,7 @@ class ThetaOptionGetControl(private val executeUrl : String = "http://192.168.1.
                 try
                 {
                     val setOptionsUrl = "${executeUrl}/osc/commands/execute"
-                    val postData = "{\"name\":\"camera.getOptions\",\"parameters\":{\"timeout\":0, \"optionNames\": {$options}}}"
+                    val postData = "{\"name\":\"camera.getOptions\",\"parameters\":{\"timeout\":0, \"optionNames\": $options}}"
                     val result: String? = httpClient.httpPostWithHeader(setOptionsUrl, postData, null, "application/json;charset=utf-8", timeoutMs)
                     if ((result != null) && (result.isNotEmpty()))
                     {
