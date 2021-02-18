@@ -24,7 +24,7 @@ class ThetaOptionSetControl(private val executeUrl : String = "http://192.168.1.
                     val result: String? = httpClient.httpPostWithHeader(setOptionsUrl, postData, null, "application/json;charset=utf-8", timeoutMs)
                     if ((result != null) && (result.isNotEmpty()))
                     {
-                        Log.v(TAG, " setOptions() : $result (${setOptionsUrl})")
+                        Log.v(TAG, " setOptions() : $options : $result (${setOptionsUrl})")
                         callBack?.operationExecuted(0, result)
                     }
                     else

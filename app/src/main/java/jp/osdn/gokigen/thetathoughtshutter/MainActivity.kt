@@ -72,6 +72,16 @@ class MainActivity : PluginActivity()
                         // ダミー処理 (EEG接続完了)
                         applicationStatus.status = MyApplicationStatus.Status.Connected
                     }
+                    else if (applicationStatus.status == MyApplicationStatus.Status.Scanning)
+                    {
+                        // ダミー処理 (高まっている状態)
+                        applicationStatus.status = MyApplicationStatus.Status.Syncing
+                    }
+                    else if (applicationStatus.status == MyApplicationStatus.Status.Syncing)
+                    {
+                        // ダミー処理 (高まるのを待っている状態)
+                        applicationStatus.status = MyApplicationStatus.Status.Scanning
+                    }
                     else
                     {
                         // ダミー処理 (初期化完了)
@@ -110,17 +120,26 @@ class MainActivity : PluginActivity()
                 MyApplicationStatus.Status.Searching -> {
                     Log.v(TAG, " SEARCHING")
                     thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.GREEN)  // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)     // 赤ランプ
                 }
                 MyApplicationStatus.Status.Connected -> {
                     Log.v(TAG, " CONNECTED")
-                    thetaHardwareControl.controlLED(LedTarget.LED3,  0, LedColor.GREEN)  // WIFIランプ
-                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)    // 赤ランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED3,  0, LedColor.GREEN)   // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)     // 赤ランプ
                 }
                 MyApplicationStatus.Status.Scanning -> {
                     Log.v(TAG, " SCANNING")
-                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)  // WIFIランプ
-                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)    // 赤ランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)    // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)      // 赤ランプ
+                }
+                MyApplicationStatus.Status.Syncing -> {
+                    Log.v(TAG, " SYNCING")
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)    // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED6, 0, LedColor.BLUE)     // Liveランプ (ON)
+                    thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)      // 赤ランプ
                 }
                 MyApplicationStatus.Status.FailedInitialize -> {
                     Log.v(TAG, " FAILED INITIALIZE")
@@ -169,8 +188,7 @@ class MainActivity : PluginActivity()
                     val setupBluetooth = ThetaSetupBluetoothSPP("http://localhost:8080")
                     setupBluetooth.setupBluetoothSPP(object : IOperationCallback { override fun operationExecuted(result: Int, resultStr: String?)
                     {
-                        Log.v(TAG, " optionSet.getOptions(Bluetooth) : $resultStr? ")
-
+                        Log.v(TAG, " optionSet.getOptions(Bluetooth) : $resultStr ($result)")
 
                         if (result == 0)
                         {

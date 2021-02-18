@@ -12,5 +12,6 @@ data class MyApplicationStatus(val defaultStatus : Status = Status.Undefined)
         Searching,
         Connected,
         Scanning,
+        Syncing,
     }
 }
