@@ -1,5 +1,6 @@
 package jp.osdn.gokigen.thetathoughtshutter
 
+import android.bluetooth.BluetoothDevice
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
@@ -9,15 +10,21 @@ import com.theta360.pluginlibrary.receiver.KeyReceiver
 import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
 import jp.osdn.gokigen.thetathoughtshutter.R.layout
+import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.BluetoothDeviceFinder
+import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.IBluetoothScanResult
+import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg.MindWaveConnection
+import jp.osdn.gokigen.thetathoughtshutter.brainwave.BrainwaveDataHolder
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaSetupBluetoothSPP
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
 import java.lang.Exception
 
-class MainActivity : PluginActivity()
+class MainActivity : PluginActivity(), IBluetoothScanResult
 {
     private val thetaHardwareControl = ThetaHardwareControl(this)
     private val applicationStatus : MyApplicationStatus = MyApplicationStatus()
+    //private val bluetoothFinder = BluetoothDeviceFinder(this, this)
+    private val bluetoothConnection = MindWaveConnection(this, BrainwaveDataHolder())
 
     companion object
     {
@@ -62,7 +69,7 @@ class MainActivity : PluginActivity()
                     if (applicationStatus.status == MyApplicationStatus.Status.Initialized)
                     {
                         // Bluetooth SPPで EEGに接続する
-                        applicationStatus.status = MyApplicationStatus.Status.Searching
+                        connectToEEG()
                     }
                 }
                 if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
@@ -102,8 +109,31 @@ class MainActivity : PluginActivity()
 
             }
         })
-
         updateStatus(applicationStatus.status)
+    }
+
+    // Bluetooth SPPで EEGに接続する
+    private fun connectToEEG()
+    {
+        try
+        {
+            val thread = Thread {
+                try
+                {
+                    bluetoothConnection.connect("MindWave Mobile")
+                }
+                catch (e: Exception)
+                {
+                    e.printStackTrace()
+                }
+            }
+            thread.start()
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+        applicationStatus.status = MyApplicationStatus.Status.Searching
     }
 
     private fun updateStatus(currentStatus : MyApplicationStatus.Status)
@@ -206,6 +236,34 @@ class MainActivity : PluginActivity()
             thread.start()
         }
         catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
+    override fun foundBluetoothDevice(device: BluetoothDevice)
+    {
+        try
+        {
+            // Bluetoothデバイスが見つかった！
+            applicationStatus.status = MyApplicationStatus.Status.Connected
+            updateStatus(applicationStatus.status)
+        }
+        catch (e : Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
+    override fun notFindBluetoothDevice()
+    {
+        try
+        {
+            // Bluetoothデバイスが見つからなかった...
+            applicationStatus.status = MyApplicationStatus.Status.Initialized
+            updateStatus(applicationStatus.status)
+        }
+        catch (e : Exception)
         {
             e.printStackTrace()
         }

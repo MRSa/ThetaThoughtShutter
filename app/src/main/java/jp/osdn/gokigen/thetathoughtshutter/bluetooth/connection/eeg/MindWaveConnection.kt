@@ -13,15 +13,14 @@ import java.io.InputStream
 import java.util.*
 import kotlin.experimental.and
 
-
-class MindWaveConnection(private val context : Activity, private val dataReceiver: IBrainwaveDataReceiver) : IBluetoothScanResult
+class MindWaveConnection(context : Activity, private val dataReceiver: IBrainwaveDataReceiver, private val scanResult: IBluetoothScanResult? = null) : IBluetoothScanResult
 {
     companion object
     {
-        private val TAG = toString()
+        private val TAG = MindWaveConnection::class.java.simpleName
     }
 
-    private val deviceFinder: BluetoothDeviceFinder = BluetoothDeviceFinder(context, this)
+    private val deviceFinder = BluetoothDeviceFinder(context, this)
     private var fileLogger: BrainwaveFileLogger? = null
     private var foundDevice = false
     private var loggingFlag = false
@@ -83,6 +82,7 @@ class MindWaveConnection(private val context : Activity, private val dataReceive
 
     private fun serialCommunicationMain(btSocket: BluetoothSocket)
     {
+        Log.v(TAG, "serialCommunicationMain ")
         var inputStream: InputStream? = null
         try
         {
@@ -118,6 +118,7 @@ class MindWaveConnection(private val context : Activity, private val dataReceive
             try
             {
                 val data: Int = inputStream.read()
+                Log.v(TAG, " RECEIVED ")
                 val byteData = (data and 0xff).toByte()
                 if (previousData == byteData && byteData == 0xaa.toByte())
                 {
@@ -148,22 +149,81 @@ class MindWaveConnection(private val context : Activity, private val dataReceive
         }
     }
 
+
     override fun foundBluetoothDevice(device: BluetoothDevice)
     {
         try
         {
+            Log.v(TAG, " foundBluetoothDevice : ${device.name}")
+
+            deviceFinder.stopScan()
+
+            // TODO: 見つかったデバイスにペアリングする
+
+            device.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
+
+            val result = device.createBond()
+            if (!result)
+            {
+                // ペアリング失敗
+            }
+
+
+        }
+        catch (e : Exception)
+        {
+            e.printStackTrace()
+        }
+        //return (device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")))
+    }
+
+
+/*
+    private fun prepareBluetoothDevice(device: BluetoothDevice) : BluetoothSocket?
+    {
+        try
+        {
+            device.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
+
+            val result = device.createBond()
+            if (!result)
+            {
+                // ペアリング失敗
+                return (null)
+            }
+
+
+        }
+        catch (e : Exception)
+        {
+            e.printStackTrace()
+        }
+        return (device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")))
+    }
+
+    override fun foundBluetoothDevice(device: BluetoothDevice)
+    {
+        try
+        {
+            Log.v(TAG, " foundBluetoothDevice : ${device.name}")
             if (foundDevice)
             {
                 // デバイスがすでに見つかっている
                 Log.v(TAG, " ALREADY FIND BLUETOOTH DEVICE. : $device.name")
+                deviceFinder.stopScan()
                 return
             }
             foundDevice = true
-            val btSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            deviceFinder.stopScan()
+
+            val btSocket = prepareBluetoothDevice(device) // device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
             val thread = Thread {
                 try
                 {
-                    serialCommunicationMain(btSocket)
+                    if (btSocket != null)
+                    {
+                        serialCommunicationMain(btSocket)
+                    }
                 }
                 catch (e: Exception)
                 {
@@ -174,10 +234,23 @@ class MindWaveConnection(private val context : Activity, private val dataReceive
             {
                 thread.start()
             }
+            else
+            {
+                Log.v(TAG, " btSocket is NULL.")
+            }
+            scanResult?.foundBluetoothDevice(device)
         }
         catch (e: Exception)
         {
             e.printStackTrace()
         }
+    }
+*/
+
+    override fun notFindBluetoothDevice()
+    {
+        Log.v(TAG, " notFindBluetoothDevice()")
+        scanResult?.notFindBluetoothDevice()
+        deviceFinder.stopScan()
     }
 }

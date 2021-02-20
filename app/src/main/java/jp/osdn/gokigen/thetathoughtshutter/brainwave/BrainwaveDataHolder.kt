@@ -3,8 +3,7 @@ package jp.osdn.gokigen.thetathoughtshutter.brainwave
 import android.util.Log
 import java.util.*
 
-
-class BrainwaveDataHolder(maxBufferSize: Int) : IBrainwaveDataReceiver
+class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
 {
     private val TAG = toString()
 
@@ -22,7 +21,7 @@ class BrainwaveDataHolder(maxBufferSize: Int) : IBrainwaveDataReceiver
 
     override fun receivedRawData(value: Int)
     {
-        //Log.v(TAG, " receivedRawData() : " + value);
+        Log.v(TAG, " receivedRawData() : $value");
         try {
             valueBuffer[currentPosition] = value
             currentPosition++
