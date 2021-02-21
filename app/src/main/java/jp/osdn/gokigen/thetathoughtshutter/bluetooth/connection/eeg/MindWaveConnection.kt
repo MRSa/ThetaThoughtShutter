@@ -3,6 +3,10 @@ package jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg
 import android.app.Activity
 import android.bluetooth.BluetoothDevice
 import android.bluetooth.BluetoothSocket
+import android.content.BroadcastReceiver
+import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.util.Log
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.IBluetoothScanResult
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.BluetoothDeviceFinder
@@ -13,23 +17,35 @@ import java.io.InputStream
 import java.util.*
 import kotlin.experimental.and
 
-class MindWaveConnection(context : Activity, private val dataReceiver: IBrainwaveDataReceiver, private val scanResult: IBluetoothScanResult? = null) : IBluetoothScanResult
+class MindWaveConnection(private val activity : Activity, private val dataReceiver: IBrainwaveDataReceiver, private val scanResult: IBluetoothScanResult? = null) : IBluetoothScanResult
 {
     companion object
     {
         private val TAG = MindWaveConnection::class.java.simpleName
     }
 
-    private val deviceFinder = BluetoothDeviceFinder(context, this)
+    private val deviceFinder = BluetoothDeviceFinder(activity, this)
     private var fileLogger: BrainwaveFileLogger? = null
     private var foundDevice = false
+    private var isPairing = false
     private var loggingFlag = false
+    private var targetDevice: BluetoothDevice? = null
+
+    private var connectionReceiver = object : BroadcastReceiver()
+    {
+        override fun onReceive(context: Context, intent: Intent)
+        {
+            onReceiveBroadcastOfConnection(this, context, intent)
+        }
+    }
 
     fun connect(deviceName: String, loggingFlag: Boolean = false)
     {
         Log.v(TAG, " BrainWaveMobileCommunicator::connect() : $deviceName Logging : $loggingFlag")
         try
         {
+            registerReceiver()
+
             this.loggingFlag = loggingFlag
 
             // Bluetooth のサービスを取得、BLEデバイスをスキャンする
@@ -38,6 +54,33 @@ class MindWaveConnection(context : Activity, private val dataReceiver: IBrainwav
             deviceFinder.startScan(deviceName)
         }
         catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
+    private fun registerReceiver()
+    {
+        try
+        {
+            val filter = IntentFilter()
+            filter.addAction(BluetoothDevice.ACTION_PAIRING_REQUEST)
+            filter.addAction(BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            activity.registerReceiver(connectionReceiver, filter)
+        }
+        catch (e : Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
+    private fun unregisterReceiver()
+    {
+        try
+        {
+            activity.unregisterReceiver(connectionReceiver)
+        }
+        catch (e : Exception)
         {
             e.printStackTrace()
         }
@@ -154,21 +197,29 @@ class MindWaveConnection(context : Activity, private val dataReceiver: IBrainwav
     {
         try
         {
-            Log.v(TAG, " foundBluetoothDevice : ${device.name}")
+            Log.v(TAG, " foundBluetoothDevice : ${device.name} : ${device.bondState}")
 
             deviceFinder.stopScan()
 
-            // TODO: 見つかったデバイスにペアリングする
-
-            device.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
-
-            val result = device.createBond()
-            if (!result)
+            if (device.bondState == BluetoothDevice.BOND_BONDED)
             {
-                // ペアリング失敗
+                // すでにペアリング済み
+                Log.v(TAG, " ALREADY PAIRED ")
+                isPairing = true
+                targetDevice = device
+                connectBluetoothDevice(device)
+                return
             }
 
-
+            if ((!foundDevice)&&(!isPairing))
+            {
+                Log.v(TAG, "START PAIRING ${device.name}")
+                device.setPin(byteArrayOf(0x30, 0x30, 0x30, 0x30))
+                targetDevice = device
+                device.createBond()
+                isPairing = true
+            }
+            deviceFinder.stopScan()
         }
         catch (e : Exception)
         {
@@ -247,10 +298,101 @@ class MindWaveConnection(context : Activity, private val dataReceiver: IBrainwav
     }
 */
 
+    private fun connectBluetoothDevice(device : BluetoothDevice?)
+    {
+        try
+        {
+            Log.v(TAG, "connectBluetoothDevice() : ${device?.name}")
+            if (device == null)
+            {
+                Log.v(TAG, " DEVICE IS NULL...")
+                return
+            }
+
+            val btSocket = device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
+            val thread = Thread {
+                try
+                {
+                    if (btSocket != null)
+                    {
+                        serialCommunicationMain(btSocket)
+                    }
+                }
+                catch (e: Exception)
+                {
+                    e.printStackTrace()
+                }
+            }
+            if (btSocket != null)
+            {
+                thread.start()
+            }
+            else
+            {
+                Log.v(TAG, " btSocket is NULL.")
+            }
+            scanResult?.foundBluetoothDevice(device)
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
     override fun notFindBluetoothDevice()
     {
         Log.v(TAG, " notFindBluetoothDevice()")
         scanResult?.notFindBluetoothDevice()
         deviceFinder.stopScan()
+    }
+
+    /**
+     *
+     *
+     */
+    private fun onReceiveBroadcastOfConnection(receiver: BroadcastReceiver, context: Context, intent: Intent)
+    {
+        val action = intent.action
+        if (action == null)
+        {
+            Log.v(TAG, "intent.getAction() : null")
+            return
+        }
+        try
+        {
+            if (action == BluetoothDevice.ACTION_PAIRING_REQUEST)
+            {
+                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)!!
+                Log.v(TAG, " onReceiveBroadcastOfConnection : BluetoothDevice.ACTION_PAIRING_REQUEST  device: ${device.name}")
+                 try
+                {
+                    targetDevice?.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
+                    device.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
+                    receiver.abortBroadcast()
+                }
+                catch (e : Exception)
+                {
+                    e.printStackTrace()
+                }
+            }
+            else if (action == BluetoothDevice.ACTION_BOND_STATE_CHANGED)
+            {
+                val device = intent.getParcelableExtra<BluetoothDevice>(BluetoothDevice.EXTRA_DEVICE)!!
+                val bondState = intent.getIntExtra(BluetoothDevice.EXTRA_BOND_STATE, -1)
+                Log.v(TAG, " onReceiveBroadcastOfConnection : BluetoothDevice.ACTION_BOND_STATE_CHANGED ($bondState) device: ${device.name}")
+                if (bondState == BluetoothDevice.BOND_BONDED)
+                {
+                    // ペアリング完了！
+                    Log.v(TAG, " ----- Device is Paired! ${device.name}")
+                    foundDevice = true
+                    connectBluetoothDevice(device)
+                }
+            }
+        }
+        catch (e: Exception)
+        {
+            Log.w(TAG, "onReceiveBroadcastOfConnection() EXCEPTION" + e.message)
+            e.printStackTrace()
+        }
     }
 }
