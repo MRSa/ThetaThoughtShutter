@@ -10,7 +10,6 @@ import com.theta360.pluginlibrary.receiver.KeyReceiver
 import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
 import jp.osdn.gokigen.thetathoughtshutter.R.layout
-import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.BluetoothDeviceFinder
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.IBluetoothScanResult
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg.MindWaveConnection
 import jp.osdn.gokigen.thetathoughtshutter.brainwave.BrainwaveDataHolder
@@ -23,8 +22,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult
 {
     private val thetaHardwareControl = ThetaHardwareControl(this)
     private val applicationStatus : MyApplicationStatus = MyApplicationStatus()
-    //private val bluetoothFinder = BluetoothDeviceFinder(this, this)
-    private val bluetoothConnection = MindWaveConnection(this, BrainwaveDataHolder())
+    private val bluetoothConnection = MindWaveConnection(this, BrainwaveDataHolder(), this)
 
     companion object
     {
@@ -74,25 +72,23 @@ class MainActivity : PluginActivity(), IBluetoothScanResult
                 }
                 if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
                 {
-                    if (applicationStatus.status == MyApplicationStatus.Status.Searching)
-                    {
-                        // ダミー処理 (EEG接続完了)
-                        applicationStatus.status = MyApplicationStatus.Status.Connected
-                    }
-                    else if (applicationStatus.status == MyApplicationStatus.Status.Scanning)
-                    {
-                        // ダミー処理 (高まっている状態)
-                        applicationStatus.status = MyApplicationStatus.Status.Syncing
-                    }
-                    else if (applicationStatus.status == MyApplicationStatus.Status.Syncing)
-                    {
-                        // ダミー処理 (高まるのを待っている状態)
-                        applicationStatus.status = MyApplicationStatus.Status.Scanning
-                    }
-                    else
-                    {
-                        // ダミー処理 (初期化完了)
-                        applicationStatus.status = MyApplicationStatus.Status.Initialized
+                    when (applicationStatus.status) {
+                        MyApplicationStatus.Status.Searching -> {
+                            // ダミー処理 (EEG接続完了)
+                            applicationStatus.status = MyApplicationStatus.Status.Connected
+                        }
+                        MyApplicationStatus.Status.Scanning -> {
+                            // ダミー処理 (高まっている状態)
+                            applicationStatus.status = MyApplicationStatus.Status.Syncing
+                        }
+                        MyApplicationStatus.Status.Syncing -> {
+                            // ダミー処理 (高まるのを待っている状態)
+                            applicationStatus.status = MyApplicationStatus.Status.Scanning
+                        }
+                        else -> {
+                            // ダミー処理 (初期化完了)
+                            applicationStatus.status = MyApplicationStatus.Status.Initialized
+                        }
                     }
                 }
 /*
@@ -198,14 +194,9 @@ class MainActivity : PluginActivity(), IBluetoothScanResult
         super.onResume()
         if (isApConnected)
         {
-
+            Log.v(TAG , " isApConnected : $isApConnected")
         }
         initializeBluetooth()
-    }
-
-    override fun onPause()
-    {
-        super.onPause()
     }
 
     private fun initializeBluetooth()

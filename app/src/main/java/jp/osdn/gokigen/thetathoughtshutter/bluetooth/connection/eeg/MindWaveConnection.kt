@@ -35,7 +35,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
     {
         override fun onReceive(context: Context, intent: Intent)
         {
-            onReceiveBroadcastOfConnection(this, context, intent)
+            onReceiveBroadcastOfConnection(this, intent)
         }
     }
 
@@ -125,10 +125,10 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
 
     private fun serialCommunicationMain(btSocket: BluetoothSocket)
     {
-        Log.v(TAG, "serialCommunicationMain ")
         var inputStream: InputStream? = null
         try
         {
+            Log.v(TAG, "serialCommunicationMain connect")
             btSocket.connect()
             inputStream = btSocket.inputStream
         }
@@ -138,6 +138,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
         }
         if (inputStream == null)
         {
+            Log.v(TAG, "serialCommunicationMain INPUT STREAM IS NULL...")
             return
         }
         if (loggingFlag)
@@ -152,6 +153,8 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
                 e.printStackTrace()
             }
         }
+        Log.v(TAG, " serialCommunicationMain : SERIAL COMMUNICATION STARTED.")
+
 
         // シリアルデータの受信メイン部分
         var previousData = 0xff.toByte()
@@ -161,7 +164,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
             try
             {
                 val data: Int = inputStream.read()
-                Log.v(TAG, " RECEIVED ")
+                //Log.v(TAG, " RECEIVED ")
                 val byteData = (data and 0xff).toByte()
                 if (previousData == byteData && byteData == 0xaa.toByte())
                 {
@@ -192,7 +195,6 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
         }
     }
 
-
     override fun foundBluetoothDevice(device: BluetoothDevice)
     {
         try
@@ -210,6 +212,16 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
                 connectBluetoothDevice(device)
                 return
             }
+            else if (device.bondState == BluetoothDevice.BOND_NONE)
+            {
+                // まだペアリングしていない...
+                Log.v(TAG, " NOT PAIRED, START PAIRING : ${device.name}")
+                isPairing = true
+                targetDevice = device
+                device.setPin(byteArrayOf(0x30, 0x30, 0x30, 0x30))
+                device.createBond()
+                return
+            }
 
             if ((!foundDevice)&&(!isPairing))
             {
@@ -225,78 +237,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
         {
             e.printStackTrace()
         }
-        //return (device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")))
     }
-
-
-/*
-    private fun prepareBluetoothDevice(device: BluetoothDevice) : BluetoothSocket?
-    {
-        try
-        {
-            device.setPin(byteArrayOf(0x30,0x30, 0x30, 0x30))
-
-            val result = device.createBond()
-            if (!result)
-            {
-                // ペアリング失敗
-                return (null)
-            }
-
-
-        }
-        catch (e : Exception)
-        {
-            e.printStackTrace()
-        }
-        return (device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB")))
-    }
-
-    override fun foundBluetoothDevice(device: BluetoothDevice)
-    {
-        try
-        {
-            Log.v(TAG, " foundBluetoothDevice : ${device.name}")
-            if (foundDevice)
-            {
-                // デバイスがすでに見つかっている
-                Log.v(TAG, " ALREADY FIND BLUETOOTH DEVICE. : $device.name")
-                deviceFinder.stopScan()
-                return
-            }
-            foundDevice = true
-            deviceFinder.stopScan()
-
-            val btSocket = prepareBluetoothDevice(device) // device.createRfcommSocketToServiceRecord(UUID.fromString("00001101-0000-1000-8000-00805F9B34FB"))
-            val thread = Thread {
-                try
-                {
-                    if (btSocket != null)
-                    {
-                        serialCommunicationMain(btSocket)
-                    }
-                }
-                catch (e: Exception)
-                {
-                    e.printStackTrace()
-                }
-            }
-            if (btSocket != null)
-            {
-                thread.start()
-            }
-            else
-            {
-                Log.v(TAG, " btSocket is NULL.")
-            }
-            scanResult?.foundBluetoothDevice(device)
-        }
-        catch (e: Exception)
-        {
-            e.printStackTrace()
-        }
-    }
-*/
 
     private fun connectBluetoothDevice(device : BluetoothDevice?)
     {
@@ -325,13 +266,15 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
             }
             if (btSocket != null)
             {
+                scanResult?.foundBluetoothDevice(device)
                 thread.start()
+                unregisterReceiver()
             }
             else
             {
                 Log.v(TAG, " btSocket is NULL.")
             }
-            scanResult?.foundBluetoothDevice(device)
+            //scanResult?.foundBluetoothDevice(device)
         }
         catch (e: Exception)
         {
@@ -350,7 +293,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
      *
      *
      */
-    private fun onReceiveBroadcastOfConnection(receiver: BroadcastReceiver, context: Context, intent: Intent)
+    private fun onReceiveBroadcastOfConnection(receiver: BroadcastReceiver, intent: Intent)
     {
         val action = intent.action
         if (action == null)

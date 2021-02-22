@@ -1,6 +1,5 @@
 package jp.osdn.gokigen.thetathoughtshutter.theta
 
-import android.graphics.Color
 import android.util.Log
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.ThetaOptionGetControl

@@ -1,11 +1,15 @@
 package jp.osdn.gokigen.thetathoughtshutter.brainwave
 
 import android.util.Log
+import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg.MindWaveConnection
 import java.util.*
 
 class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
 {
-    private val TAG = toString()
+    companion object
+    {
+        private val TAG = BrainwaveDataHolder::class.java.simpleName
+    }
 
     private var valueBuffer: IntArray
     private var currentSummaryData = BrainwaveSummaryData()
@@ -21,15 +25,19 @@ class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
 
     override fun receivedRawData(value: Int)
     {
-        Log.v(TAG, " receivedRawData() : $value");
-        try {
+        //Log.v(TAG, " receivedRawData() : $value");
+        try
+        {
             valueBuffer[currentPosition] = value
             currentPosition++
-            if (currentPosition == maxBufferSize) {
+            if (currentPosition == maxBufferSize)
+            {
                 currentPosition = 0
                 bufferIsFull = true
             }
-        } catch (e: Exception) {
+        }
+        catch (e: Exception)
+        {
             e.printStackTrace()
         }
     }
@@ -38,6 +46,7 @@ class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
     {
         if (data != null)
         {
+            Log.v(TAG, " receivedSummaryData() : ${data.size} bytes.")
             if (!currentSummaryData.update(data))
             {
                 // parse failure...
