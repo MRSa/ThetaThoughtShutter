@@ -46,11 +46,22 @@ class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
     {
         if (data != null)
         {
-            Log.v(TAG, " receivedSummaryData() : ${data.size} bytes.")
+            // Log.v(TAG, " receivedSummaryData() : ${data.size} bytes.")
             if (!currentSummaryData.update(data))
             {
                 // parse failure...
                 Log.v(TAG, " FAIL : PARSE EEG SUMMARY DATA (" + data.size + ")")
+                return
+            }
+            try
+            {
+                val attention = currentSummaryData.getAttention()
+                val mediation = currentSummaryData.getMediation()
+                Log.v(TAG, "  ATTENTION : $attention   MEDIATION : $mediation")
+            }
+            catch (e : Exception)
+            {
+                e.printStackTrace()
             }
         }
     }

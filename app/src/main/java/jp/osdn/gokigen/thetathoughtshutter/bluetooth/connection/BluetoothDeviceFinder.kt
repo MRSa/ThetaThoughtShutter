@@ -10,7 +10,7 @@ import android.bluetooth.le.ScanResult
 import android.content.Context
 import android.util.Log
 
-class BluetoothDeviceFinder(private val context: Activity, private val scanResult: IBluetoothScanResult) : BluetoothAdapter.LeScanCallback
+class BluetoothDeviceFinder(private val context: Activity, private val scanResult: IBluetoothScanResult) : BluetoothAdapter.LeScanCallback, ScanCallback()
 {
 
     companion object
@@ -33,38 +33,8 @@ class BluetoothDeviceFinder(private val context: Activity, private val scanResul
             Log.v(TAG, " stopScan()")
             val btMgr: BluetoothManager = context.getSystemService(Context.BLUETOOTH_SERVICE) as BluetoothManager
             btMgr.adapter.cancelDiscovery()
-            scanner?.flushPendingScanResults((object: ScanCallback() {
-                override fun onScanFailed(errorCode: Int)
-                {
-
-                }
-
-                override fun onScanResult(callbackType: Int, result: ScanResult?)
-                {
-
-                }
-
-                override fun onBatchScanResults(results: MutableList<ScanResult>?)
-                {
-
-                }
-            }))
-            scanner?.stopScan(object: ScanCallback() {
-                override fun onScanFailed(errorCode: Int)
-                {
-
-                }
-
-                override fun onScanResult(callbackType: Int, result: ScanResult?)
-                {
-
-                }
-
-                override fun onBatchScanResults(results: MutableList<ScanResult>?)
-                {
-
-                }
-            })
+            scanner?.flushPendingScanResults(this)
+            scanner?.stopScan(this)
         }
         catch (e : Exception)
         {
@@ -110,55 +80,13 @@ class BluetoothDeviceFinder(private val context: Activity, private val scanResul
             }
             //adapter.startDiscovery()
             scanner = adapter.bluetoothLeScanner
-            scanner?.startScan(object: ScanCallback() {
-                override fun onScanFailed(errorCode: Int)
-                {
-                    //super.onScanFailed(errorCode)
-                    Log.v(TAG, " onScanFailed : $errorCode")
-                }
-
-                override fun onScanResult(callbackType: Int, result: ScanResult?)
-                {
-                    //super.onScanResult(callbackType, result)
-                    val device = result?.device
-                    Log.v(TAG, " onScanResult($callbackType, ${device?.name}) ")
-                    val findDevice = (device?.name)?.contains(targetDeviceName)
-                    if ((findDevice != null)&&(findDevice))
-                    {
-                        Log.v(TAG, " FIND DEVICE : $targetDeviceName")
-                        scanResult.foundBluetoothDevice(device)
-                        scanner?.stopScan(object : ScanCallback() {
-                            override fun onScanFailed(errorCode: Int)
-                            {
-                                Log.v(TAG, " stopScan::onScanFailed : $errorCode")
-                            }
-                            override fun onScanResult(callbackType: Int, result: ScanResult?)
-                            {
-                                Log.v(TAG, " stopScan::onScanResult : $callbackType")
-                            }
-                            override fun onBatchScanResults(results: MutableList<ScanResult>?)
-                            {
-                                Log.v(TAG, " stopScan::onBatchScanResults ")
-                            }
-                        })
-                    }
-                }
-
-                override fun onBatchScanResults(results: MutableList<ScanResult>?)
-                {
-                    //super.onBatchScanResults(results)
-                    Log.v(TAG, " onBatchScanResults ")
-                }
-            })
+            scanner?.startScan(this)
         }
         catch (e: Exception)
         {
             e.printStackTrace()
-            Log.v(TAG, "Bluetooth LE SCAN EXCEPTION...")
-            //messageToShow.showMessage(R.string.scan_fail_via_bluetooth)
+            Log.v(TAG, "Bluetooth SCAN EXCEPTION...")
         }
-        //Log.v(TAG, "Bluetooth SCAN STOPPED.")
-        //scanResult.notFindBluetoothDevice()
     }
 
     override fun onLeScan(device: BluetoothDevice, rssi: Int, scanRecord: ByteArray?)
@@ -179,5 +107,30 @@ class BluetoothDeviceFinder(private val context: Activity, private val scanResul
         {
             e.printStackTrace()
         }
+    }
+
+    override fun onScanFailed(errorCode: Int)
+    {
+        Log.v(TAG, " onScanFailed : $errorCode")
+    }
+
+    override fun onScanResult(callbackType: Int, result: ScanResult?)
+    {
+        //super.onScanResult(callbackType, result)
+        val device = result?.device
+        Log.v(TAG, " onScanResult($callbackType, ${device?.name}) ")
+        val findDevice = (device?.name)?.contains(targetDeviceName)
+        if ((findDevice != null)&&(findDevice))
+        {
+            Log.v(TAG, " FIND DEVICE : $targetDeviceName")
+            scanResult.foundBluetoothDevice(device)
+            scanner?.stopScan(this)
+        }
+    }
+
+    override fun onBatchScanResults(results: MutableList<ScanResult>?)
+    {
+        //super.onBatchScanResults(results)
+        Log.v(TAG, " onBatchScanResults ")
     }
 }

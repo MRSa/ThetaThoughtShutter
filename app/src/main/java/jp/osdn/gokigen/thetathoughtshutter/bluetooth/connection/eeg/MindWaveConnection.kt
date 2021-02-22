@@ -59,6 +59,11 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
         }
     }
 
+    fun disconnect()
+    {
+        foundDevice = false
+    }
+
     private fun registerReceiver()
     {
         try

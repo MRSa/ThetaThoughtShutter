@@ -132,6 +132,30 @@ class MainActivity : PluginActivity(), IBluetoothScanResult
         applicationStatus.status = MyApplicationStatus.Status.Searching
     }
 
+    private fun disconnectToEEG()
+    {
+        try
+        {
+            val thread = Thread {
+                try
+                {
+                    bluetoothConnection.disconnect()
+                }
+                catch (e: Exception)
+                {
+                    e.printStackTrace()
+                }
+            }
+            thread.start()
+        }
+        catch (e: Exception)
+        {
+            e.printStackTrace()
+        }
+        applicationStatus.status = MyApplicationStatus.Status.Initialized
+    }
+
+
     private fun updateStatus(currentStatus : MyApplicationStatus.Status)
     {
         try
@@ -198,6 +222,20 @@ class MainActivity : PluginActivity(), IBluetoothScanResult
         }
         initializeBluetooth()
     }
+
+    override fun onPause()
+    {
+        super.onPause()
+        try
+        {
+            disconnectToEEG()
+        }
+        catch (e : Exception)
+        {
+            e.printStackTrace()
+        }
+    }
+
 
     private fun initializeBluetooth()
     {
