@@ -24,7 +24,7 @@ class ThetaCaptureControl(executeUrl : String = "http://192.168.1.1")
             {
                 if (resultStr != null)
                 {
-                    Log.v(TAG, "set to Image :  $resultStr ")
+                    Log.v(TAG, "set to Image capture mode.:  $resultStr ")
                 }
             }
         })
@@ -39,7 +39,7 @@ class ThetaCaptureControl(executeUrl : String = "http://192.168.1.1")
                 Log.v(TAG, "ALREADY START CAPTURE SEQUENCE")
                 return
             }
-            singleShot.singleShot()  // まじか、応答しない...
+            singleShot.singleShot()
         }
         catch (e : Exception)
         {

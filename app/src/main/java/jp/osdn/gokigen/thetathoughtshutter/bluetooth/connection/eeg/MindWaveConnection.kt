@@ -62,6 +62,8 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
     fun disconnect()
     {
         foundDevice = false
+        deviceFinder.reset()
+        deviceFinder.stopScan()
     }
 
     private fun registerReceiver()
@@ -190,6 +192,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
                 e.printStackTrace()
             }
         }
+        Log.v(TAG, " serialCommunicationMain : SERIAL COMMUNICATION FINISHED.")
         try
         {
             btSocket.close()
@@ -212,6 +215,7 @@ class MindWaveConnection(private val activity : Activity, private val dataReceiv
             {
                 // すでにペアリング済み
                 Log.v(TAG, " ALREADY PAIRED ")
+                foundDevice = true
                 isPairing = true
                 targetDevice = device
                 connectBluetoothDevice(device)

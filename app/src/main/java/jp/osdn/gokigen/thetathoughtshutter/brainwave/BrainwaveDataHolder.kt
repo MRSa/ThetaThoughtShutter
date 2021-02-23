@@ -1,7 +1,6 @@
 package jp.osdn.gokigen.thetathoughtshutter.brainwave
 
 import android.util.Log
-import java.util.*
 
 class BrainwaveDataHolder(private val receiver: IDetectSensingReceiver? = null, maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
 {
@@ -135,21 +134,18 @@ class BrainwaveDataHolder(private val receiver: IDetectSensingReceiver? = null, 
         try {
             var endPosition = currentPosition - 1
             if (currentPosition > size) {
-                return Arrays.copyOfRange(valueBuffer, endPosition - size, endPosition)
+                return valueBuffer.copyOfRange(endPosition - size, endPosition)
             }
             if (!bufferIsFull) {
-                return Arrays.copyOfRange(valueBuffer, 0, endPosition)
+                return valueBuffer.copyOfRange(0, endPosition)
             }
             if (currentPosition == 0) {
                 endPosition = maxBufferSize - 1
-                return Arrays.copyOfRange(valueBuffer, endPosition - size, endPosition)
+                return valueBuffer.copyOfRange(endPosition - size, endPosition)
             }
             val remainSize = size - (currentPosition - 1)
-            val size0: IntArray = Arrays.copyOfRange(valueBuffer, 0, currentPosition - 1)
-            val size1: IntArray = Arrays.copyOfRange(
-                valueBuffer,
-                maxBufferSize - 1 - remainSize, maxBufferSize - 1
-            )
+            val size0: IntArray = valueBuffer.copyOfRange(0, currentPosition - 1)
+            val size1: IntArray = valueBuffer.copyOfRange(maxBufferSize - 1 - remainSize, maxBufferSize - 1)
             replyData = IntArray(size)
             System.arraycopy(size1, 0, replyData, 0, size1.size)
             System.arraycopy(size0, 0, replyData, size1.size, size0.size)

@@ -18,12 +18,14 @@ import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaCaptureControl
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaSetupBluetoothSPP
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
+import jp.osdn.gokigen.thetathoughtshutter.theta.status.ThetaCameraStatusWatcher
 import java.lang.Exception
 
 class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingReceiver
 {
     private val thetaHardwareControl = ThetaHardwareControl(this)
     private val thetaCaptureControl = ThetaCaptureControl("http://localhost:8080")
+    private val thetaStatusWatcher = ThetaCameraStatusWatcher("http://localhost:8080")
     private val applicationStatus : MyApplicationStatus = MyApplicationStatus()
     private val bluetoothConnection = MindWaveConnection(this, BrainwaveDataHolder(this), this)
 
@@ -49,38 +51,24 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
             {
                 if (keyCode == KeyReceiver.KEYCODE_WLAN_ON_OFF) // Wirelessボタン
                 {
-                    if (applicationStatus.status == MyApplicationStatus.Status.Initialized)
+                    if ((applicationStatus.status == MyApplicationStatus.Status.Initialized)||
+                            (applicationStatus.status == MyApplicationStatus.Status.FailedInitialize))
                     {
                         // Bluetooth SPPで EEGに接続する
                         connectToEEG()
                     }
                 }
-/*
                 if (keyCode == KeyReceiver.KEYCODE_MEDIA_RECORD) // Modeボタン
                 {
-                    when (applicationStatus.status) {
-                        MyApplicationStatus.Status.Searching -> {
-                            // ダミー処理 (EEG接続完了)
-                            applicationStatus.status = MyApplicationStatus.Status.Connected
-                        }
-                        MyApplicationStatus.Status.Scanning -> {
-                            // ダミー処理 (高まっている状態)
-                            applicationStatus.status = MyApplicationStatus.Status.Syncing
-                        }
-                        MyApplicationStatus.Status.Syncing -> {
-                            // ダミー処理 (高まるのを待っている状態)
-                            applicationStatus.status = MyApplicationStatus.Status.Scanning
-                        }
-                        else -> {
-                            // ダミー処理 (初期化完了)
-                            applicationStatus.status = MyApplicationStatus.Status.Initialized
-                        }
-                    }
+                    // 接続エラーにする
+                    applicationStatus.status = MyApplicationStatus.Status.FailedInitialize
                 }
+/*
                 if (keyCode == KeyReceiver.KEYCODE_FUNCTION)   // Fnボタン (Z1のみ)
                 {
 
                 }
+
                 if (keyCode == KeyReceiver.KEYCODE_CAMERA)   // Shutterボタン
                 {
 
@@ -272,6 +260,9 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
             // Bluetoothデバイスが見つかった！
             applicationStatus.status = MyApplicationStatus.Status.Connected
             updateStatus(applicationStatus.status)
+
+            // 周期実行
+            thetaStatusWatcher.startStatusWatch()
         }
         catch (e : Exception)
         {
@@ -303,7 +294,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
 
     override fun detectAttention()
     {
-        Log.v(TAG, "  ===== DETECT ATTENTION =====")
+        //Log.v(TAG, "  ===== DETECT ATTENTION =====")
         applicationStatus.status = MyApplicationStatus.Status.Syncing
         updateStatus(applicationStatus.status)
     }
@@ -315,7 +306,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
 
     override fun lostAttention()
     {
-        Log.v(TAG, "  ===== LOST ATTENTION =====")
+        //Log.v(TAG, "  ===== LOST ATTENTION =====")
         applicationStatus.status = MyApplicationStatus.Status.Scanning
         updateStatus(applicationStatus.status)
     }
@@ -327,7 +318,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
 
     override fun detectAttentionThreshold()
     {
-        Log.v(TAG, "  ===== DETECT ATTENTION THRESHOLD =====")
+        //Log.v(TAG, "  ===== DETECT ATTENTION THRESHOLD =====")
         try
         {
             // 静止画の撮影！
@@ -341,38 +332,6 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
 
     override fun detectMediationThreshold()
     {
-        Log.v(TAG, "  ===== DETECT MEDIATION THRESHOLD =====")
+        //Log.v(TAG, "  ===== DETECT MEDIATION THRESHOLD =====")
     }
-
 }
-
-//
-// -----------------------------------------------------
-//  LED1 : 電源ランプ
-//  LED2 : カメラステータス ランプ(レンズとマイクの間)
-//  LED3 : ワイヤレスマーク ランプ
-//  LED4 : キャプチャーモード (カメラ)
-//  LED5 : キャプチャーモード (ムービー)
-//  LED6 : キャプチャーモード (LIVEストリーミング)
-//  LED7 : ビデオ録画 ランプ
-//  LED8 : メモリ警告ランプ
-//
-//  BTN1 : 電源ボタン
-//  BTN2 : ワイヤレスボタン
-//  BTN3 : モードボタン
-//  SHUT : シャッターボタン
-// -----------------------------------------------------
-//
-//  [制御可能なLED]
-//    - LED3～LED8 : カラー : "blue", "green", "red", "cyan", "magenta", "yellow", "white"
-//    - ブリンク間隔 : 1～2000 msec
-//
-//  [KeyCode]
-//    - 27  : Shutter Button
-//    - 130 : Mode Button
-//    - 284 : Wireless Button
-//    - 119 : Fn Button (Z1 Only)
-//
-//
-//   http://localhost:8080/
-//

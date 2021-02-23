@@ -1,9 +1,7 @@
 package jp.osdn.gokigen.thetathoughtshutter.utils
 
-import android.app.Activity
 import android.os.Environment
 import android.util.Log
-import jp.osdn.gokigen.thetathoughtshutter.R
 import java.io.File
 import java.io.FileOutputStream
 import java.text.SimpleDateFormat
