@@ -7,6 +7,8 @@ import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
 import com.theta360.pluginlibrary.values.OledDisplay
 import com.theta360.pluginlibrary.values.TextArea
+import java.util.*
+import kotlin.collections.HashMap
 
 class ThetaHardwareControl(private val activity: PluginActivity) : IThetaHardwareControl
 {

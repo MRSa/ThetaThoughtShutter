@@ -9,6 +9,7 @@ import com.theta360.pluginlibrary.callback.KeyCallback
 import com.theta360.pluginlibrary.receiver.KeyReceiver
 import com.theta360.pluginlibrary.values.LedColor
 import com.theta360.pluginlibrary.values.LedTarget
+import com.theta360.pluginlibrary.values.TextArea
 import jp.osdn.gokigen.thetathoughtshutter.R.layout
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.IBluetoothScanResult
 import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg.MindWaveConnection
@@ -19,7 +20,8 @@ import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaHardwareControl
 import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaSetupBluetoothSPP
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
 import jp.osdn.gokigen.thetathoughtshutter.theta.status.ThetaCameraStatusWatcher
-import java.lang.Exception
+import java.util.*
+import kotlin.collections.HashMap
 
 class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingReceiver
 {
@@ -42,18 +44,15 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
         setAutoClose(true)
 
         setKeyCallback(object : KeyCallback {
-            override fun onKeyDown(keyCode: Int, event: KeyEvent?)
-            {
+            override fun onKeyDown(keyCode: Int, event: KeyEvent?) {
 
             }
 
-            override fun onKeyUp(keyCode: Int, event: KeyEvent?)
-            {
+            override fun onKeyUp(keyCode: Int, event: KeyEvent?) {
                 if (keyCode == KeyReceiver.KEYCODE_WLAN_ON_OFF) // Wirelessボタン
                 {
-                    if ((applicationStatus.status == MyApplicationStatus.Status.Initialized)||
-                            (applicationStatus.status == MyApplicationStatus.Status.FailedInitialize))
-                    {
+                    if ((applicationStatus.status == MyApplicationStatus.Status.Initialized) ||
+                            (applicationStatus.status == MyApplicationStatus.Status.FailedInitialize)) {
                         // Bluetooth SPPで EEGに接続する
                         connectToEEG()
                     }
@@ -77,8 +76,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
                 updateStatus(applicationStatus.status)
             }
 
-            override fun onKeyLongPress(keyCode: Int, event: KeyEvent?)
-            {
+            override fun onKeyLongPress(keyCode: Int, event: KeyEvent?) {
 
             }
         })
@@ -132,7 +130,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
         applicationStatus.status = MyApplicationStatus.Status.Initialized
     }
 
-    private fun updateStatus(currentStatus : MyApplicationStatus.Status)
+    private fun updateStatus(currentStatus: MyApplicationStatus.Status)
     {
         try
         {
@@ -142,48 +140,55 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
                     thetaHardwareControl.controlLED(LedTarget.LED3, 1500, LedColor.GREEN)  // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)     // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)      // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "READY TO SEARCH"))
                 }
                 MyApplicationStatus.Status.Searching -> {
                     Log.v(TAG, " SEARCHING")
                     thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.GREEN)  // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)     // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "SEARCHING"))
                 }
                 MyApplicationStatus.Status.Connected -> {
                     Log.v(TAG, " CONNECTED")
-                    thetaHardwareControl.controlLED(LedTarget.LED3,  0, LedColor.GREEN)   // WIFIランプ
+                    thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)   // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)     // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "CONNECTED"))
                 }
                 MyApplicationStatus.Status.Scanning -> {
                     Log.v(TAG, " SCANNING")
                     thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)    // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)      // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "SCANNING"))
                 }
                 MyApplicationStatus.Status.Syncing -> {
                     Log.v(TAG, " SYNCING")
                     thetaHardwareControl.controlLED(LedTarget.LED3, 0, LedColor.GREEN)    // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, 0, LedColor.BLUE)     // Liveランプ (ON)
                     thetaHardwareControl.controlLED(LedTarget.LED7, 0, LedColor.RED)      // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "SYNCING"))
                 }
                 MyApplicationStatus.Status.FailedInitialize -> {
                     Log.v(TAG, " FAILED INITIALIZE")
                     thetaHardwareControl.controlLED(LedTarget.LED3, 250, LedColor.GREEN)  // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED6, -1, LedColor.BLUE)    // Liveランプ (OFF)
                     thetaHardwareControl.controlLED(LedTarget.LED7, 250, LedColor.RED)    // 赤ランプ
+                    thetaHardwareControl.controlOLED(mapOf(TextArea.MIDDLE to "INITIALIZE FAILED"))
                 }
                 else -> {
                     Log.v(TAG, " UNDEFINED")
                     thetaHardwareControl.controlLED(LedTarget.LED3, -1, LedColor.GREEN)  // WIFIランプ
                     thetaHardwareControl.controlLED(LedTarget.LED4, -1, LedColor.BLUE)   // カメラランプ
                     thetaHardwareControl.controlLED(LedTarget.LED5, -1, LedColor.BLUE)   // ムービーランプ
-                    thetaHardwareControl.controlLED(LedTarget.LED6,  0, LedColor.BLUE)   // Liveランプ (ON)
+                    thetaHardwareControl.controlLED(LedTarget.LED6, 0, LedColor.BLUE)   // Liveランプ (ON)
                     thetaHardwareControl.controlLED(LedTarget.LED7, -1, LedColor.RED)    // 赤ランプ
+                    thetaHardwareControl.controlOLED(EnumMap(com.theta360.pluginlibrary.values.TextArea::class.java))
                 }
             }
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
@@ -194,13 +199,13 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
         super.onResume()
         if (isApConnected)
         {
-            Log.v(TAG , " isApConnected : $isApConnected")
+            Log.v(TAG, " isApConnected : $isApConnected")
         }
         try
         {
             thetaCaptureControl.setupCaptureMode()
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
@@ -213,8 +218,9 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
         try
         {
             disconnectToEEG()
+            thetaStatusWatcher.stopStatusWatch()
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
@@ -228,17 +234,17 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
                 try
                 {
                     val setupBluetooth = ThetaSetupBluetoothSPP("http://localhost:8080")
-                    setupBluetooth.setupBluetoothSPP(object : IOperationCallback { override fun operationExecuted(result: Int, resultStr: String?)
-                    {
-                        Log.v(TAG, " optionSet.getOptions(Bluetooth) : $resultStr ($result)")
+                    setupBluetooth.setupBluetoothSPP(object : IOperationCallback {
+                        override fun operationExecuted(result: Int, resultStr: String?) {
+                            Log.v(TAG, " optionSet.getOptions(Bluetooth) : $resultStr ($result)")
 
-                        if (result == 0)
-                        {
-                            // Bluetoothの初期化終了
-                            applicationStatus.status = MyApplicationStatus.Status.Initialized
-                            updateStatus(applicationStatus.status)
+                            if (result == 0) {
+                                // Bluetoothの初期化終了
+                                applicationStatus.status = MyApplicationStatus.Status.Initialized
+                                updateStatus(applicationStatus.status)
+                            }
                         }
-                    }})
+                    })
                 }
                 catch (e: Exception)
                 {
@@ -264,7 +270,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
             // 周期実行
             thetaStatusWatcher.startStatusWatch()
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
@@ -278,7 +284,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
             applicationStatus.status = MyApplicationStatus.Status.Initialized
             updateStatus(applicationStatus.status)
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
@@ -324,7 +330,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
             // 静止画の撮影！
             thetaCaptureControl.doCapture()
         }
-        catch (e : Exception)
+        catch (e: Exception)
         {
             e.printStackTrace()
         }
