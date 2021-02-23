@@ -1,9 +1,13 @@
 package jp.osdn.gokigen.thetathoughtshutter
 
+import android.Manifest
 import android.bluetooth.BluetoothDevice
+import android.content.pm.PackageManager
 import android.os.Bundle
 import android.util.Log
 import android.view.KeyEvent
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import com.theta360.pluginlibrary.activity.PluginActivity
 import com.theta360.pluginlibrary.callback.KeyCallback
 import com.theta360.pluginlibrary.receiver.KeyReceiver
@@ -21,7 +25,6 @@ import jp.osdn.gokigen.thetathoughtshutter.theta.ThetaSetupBluetoothSPP
 import jp.osdn.gokigen.thetathoughtshutter.theta.operation.IOperationCallback
 import jp.osdn.gokigen.thetathoughtshutter.theta.status.ThetaCameraStatusWatcher
 import java.util.*
-import kotlin.collections.HashMap
 
 class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingReceiver
 {
@@ -34,15 +37,54 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
     companion object
     {
         private val TAG = MainActivity::class.java.simpleName
+        private const val REQUEST_CODE_PERMISSIONS = 10
+        private val REQUIRED_PERMISSIONS = arrayOf(
+                Manifest.permission.INTERNET,
+                Manifest.permission.BLUETOOTH,
+                Manifest.permission.BLUETOOTH_ADMIN,
+                Manifest.permission.ACCESS_COARSE_LOCATION,
+        )
     }
+
+    private fun allPermissionsGranted() = REQUIRED_PERMISSIONS.all {
+        ContextCompat.checkSelfPermission(baseContext, it) == PackageManager.PERMISSION_GRANTED
+    }
+
 
     override fun onCreate(savedInstanceState: Bundle?)
     {
         super.onCreate(savedInstanceState)
         setContentView(layout.activity_main)
-
         setAutoClose(true)
+        updateStatus(applicationStatus.status)
 
+        if (allPermissionsGranted())
+        {
+            initializeKeyOperation()
+        }
+        else
+        {
+            ActivityCompat.requestPermissions(this, REQUIRED_PERMISSIONS, REQUEST_CODE_PERMISSIONS)
+        }
+    }
+
+    override fun onRequestPermissionsResult(requestCode: Int, permissions: Array<String>, grantResults: IntArray)
+    {
+        if (requestCode == REQUEST_CODE_PERMISSIONS)
+        {
+            if (allPermissionsGranted())
+            {
+                initializeKeyOperation()
+            }
+            else
+            {
+                finish()
+            }
+        }
+    }
+
+    private fun initializeKeyOperation()
+    {
         setKeyCallback(object : KeyCallback {
             override fun onKeyDown(keyCode: Int, event: KeyEvent?) {
 
@@ -82,6 +124,7 @@ class MainActivity : PluginActivity(), IBluetoothScanResult, IDetectSensingRecei
         })
         updateStatus(applicationStatus.status)
     }
+
 
     // Bluetooth SPPで EEGに接続する
     private fun connectToEEG()
