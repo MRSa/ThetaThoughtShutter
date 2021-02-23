@@ -1,14 +1,17 @@
 package jp.osdn.gokigen.thetathoughtshutter.brainwave
 
 import android.util.Log
-import jp.osdn.gokigen.thetathoughtshutter.bluetooth.connection.eeg.MindWaveConnection
 import java.util.*
 
-class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
+class BrainwaveDataHolder(private val receiver: IDetectSensingReceiver? = null, maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
 {
     companion object
     {
         private val TAG = BrainwaveDataHolder::class.java.simpleName
+        private const val THRESHOLD_ATTENTION = 80
+        private const val THRESHOLD_MEDIATION = 90
+        private const val COUNT_CONTINUOUS_ATTENTION = 5
+        private const val COUNT_CONTINUOUS_MEDIATION = 5
     }
 
     private var valueBuffer: IntArray
@@ -16,6 +19,9 @@ class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
     private var maxBufferSize = 0
     private var currentPosition = 0
     private var bufferIsFull = false
+    private var attentionCount = 0
+    private var mediationCount = 0
+    private var dataReceived = false
 
     init
     {
@@ -58,6 +64,58 @@ class BrainwaveDataHolder(maxBufferSize: Int = 16000) : IBrainwaveDataReceiver
                 val attention = currentSummaryData.getAttention()
                 val mediation = currentSummaryData.getMediation()
                 Log.v(TAG, "  ATTENTION : $attention   MEDIATION : $mediation")
+                if ((!dataReceived)&&(attention > 0)&&(mediation > 0))
+                {
+                    // データの受信を開始した
+                    dataReceived = true
+                    receiver?.startSensing()
+                }
+
+                if (attention > THRESHOLD_ATTENTION)
+                {
+                    if (attentionCount == 0)
+                    {
+                        receiver?.detectAttention()
+                    }
+                    attentionCount++
+                    if (attentionCount == COUNT_CONTINUOUS_ATTENTION)
+                    {
+                        // 検出を通知する
+                        receiver?.detectAttentionThreshold()
+                    }
+                }
+                else
+                {
+                    // リミッターを下回ったので連続カウンタをクリアする
+                    if( attentionCount > 0)
+                    {
+                        receiver?.lostAttention()
+                    }
+                    attentionCount = 0
+                }
+
+                if (mediation > THRESHOLD_MEDIATION)
+                {
+                    if (mediationCount == 0)
+                    {
+                        receiver?.detectMediation()
+                    }
+                    mediationCount++
+                    if (mediationCount == COUNT_CONTINUOUS_MEDIATION)
+                    {
+                        // 検出を通知する
+                        receiver?.detectMediationThreshold()
+                    }
+                }
+                else
+                {
+                    // リミッターを下回ったので連続カウンタをクリアする
+                    if( mediationCount > 0)
+                    {
+                        receiver?.lostMediation()
+                    }
+                    mediationCount = 0
+                }
             }
             catch (e : Exception)
             {
